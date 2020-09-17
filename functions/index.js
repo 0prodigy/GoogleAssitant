@@ -9,6 +9,7 @@
 // // });
 
 const { conversation, Image, List } = require("@assistant/conversation");
+const { actionssdk } = require("actions-on-google");
 const axios = require("axios");
 const functions = require("firebase-functions");
 const AccessToken = require("./ACCESS_TOKEN");
@@ -21,8 +22,8 @@ app.handle("first", async (conv) => {
 
 app.handle("createDoc", async (conv) => {
   let data = JSON.stringify({
-    template_id: 1,
-    title: conv.session.params.newTitle,
+    template_id: conv.session.params.templateNumber,
+    title: conv.session.params.newTitle || "Untitled Document",
   });
 
   let config = {
@@ -91,11 +92,166 @@ app.handle("chooseTemplate", async (conv) => {
   // Define prompt content using keys
   conv.add(
     new List({
-      title: "List title",
-      subtitle: "List subtitle",
+      title: "All templates list",
+      subtitle: "available template",
       items: [...list.map((item) => ({ key: String(item.name) }))],
     })
   );
 });
+
+app.handle("addContact", async (conv) => {
+  conv.prompt.add("i need more details");
+  let list = [];
+
+  let config = {
+    method: "get",
+    url: "https://api.revvsales.com/api/docstemplate/?page_num=1&status=ACTIVE",
+    headers: {
+      AccessToken,
+      "Content-Type": "application/json",
+    },
+  };
+
+  await axios(config)
+    .then(({ data: { Contacts: data } }) => {
+      for (let i = 0; i < data.length; i++) {
+        list.push({
+          name: String(data[i].id),
+          synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+          display: {
+            title: data[i].name,
+            description: data[i].email,
+          },
+        });
+      }
+      return list;
+    })
+    .catch((error) => {
+      conv.add("Something went wrong");
+    });
+
+  // Override type based on slot 'prompt_option'
+  conv.session.typeOverrides = [
+    {
+      name: "contactId",
+      mode: "TYPE_REPLACE",
+      synonym: {
+        entries: [...list],
+      },
+    },
+  ];
+
+  // Define prompt content using keys
+  conv.add(
+    new List({
+      title: "All contact list",
+      subtitle: "available contact",
+      items: [...list.map((item) => ({ key: String(item.name) }))],
+    })
+  );
+});
+
+// app.handle("listDocument", async (conv) => {
+//   let list = [];
+
+//   conv.add("This is a list.");
+
+//   let config = {
+//     method: "get",
+//     url: "https://api.revvsales.com/api/folders/?page_num=1",
+//     headers: {
+//       AccessToken,
+//       "Content-Type": "application/json",
+//     },
+//   };
+
+//   await axios(config)
+//     .then(({ data: { Templates: data } }) => {
+//       data = data.page.inodes;
+//       for (let i = 0; i < data.length; i++) {
+//         list.push({
+//           name: String(data[i].object_id),
+//           synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+//           display: {
+//             title: data[i].name,
+//             description: data[i].document_tag.name,
+//           },
+//         });
+//       }
+//       return list;
+//     })
+//     .catch((error) => {
+//       conv.add("Something went wrong");
+//     });
+
+//   // Override type based on slot 'prompt_option'
+//   conv.session.typeOverrides = [
+//     {
+//       name: "objectId",
+//       mode: "TYPE_REPLACE",
+//       synonym: {
+//         entries: [...list],
+//       },
+//     },
+//   ];
+
+//   // Define prompt content using keys
+//   conv.add(
+//     new List({
+//       title: "All templates list",
+//       subtitle: "available template",
+//       items: [...list.map((item) => ({ key: String(item.name) }))],
+//     })
+//   );
+
+//   // conv.add("Which one from this list.");
+//   // let config = {
+//   //   method: "get",
+//   //   url: "https://api.revvsales.com/api/folders/?page_num=1",
+//   //   headers: {
+//   //     AccessToken,
+//   //     "Content-Type": "application/json",
+//   //   },
+//   // };
+
+//   // await axios(config)
+//   //   .then(({ data }) => {
+//   //     data = data.page.inodes;
+//   //     for (let i = 0; i < data.length; i++) {
+//   //       list.push({
+//   //         name: String(data[i].object_id),
+//   //         synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+//   //         display: {
+//   //           title: data[i].name,
+//   //           description: data[i].document_tag.name,
+//   //         },
+//   //       });
+//   //     }
+//   //     return list;
+//   //   })
+//   //   .catch((error) => {
+//   //     conv.add("Something went wrong");
+//   //   });
+
+//   // // Override type based on slot 'prompt_option'
+//   // conv.session.typeOverrides = [
+//   //   {
+//   //     name: "objectId",
+//   //     mode: "TYPE_REPLACE",
+//   //     synonym: {
+//   //       entries: [...list],
+//   //     },
+//   //   },
+//   // ];
+
+//   // // Define prompt content using keys
+//   // conv.add(
+//   //   new List({
+//   //     title: "All document List",
+//   //     subtitle: "file type",
+//   //     items: [...list.map((item) => ({ key: String(item.name) }))],
+//   //   })
+//   // );
+// });
 
 exports.ActionsOnGoogleFulfillment = functions.https.onRequest(app);
