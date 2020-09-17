@@ -117,7 +117,7 @@ app.handle("contactList", async (conv) => {
       for (let i = 0; i < data.length; i++) {
         list.push({
           name: String(data[i].email+"#"+data[i].name),
-          synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+          synonyms: ["choose " + (i + 1), String(i + 1), data[i].name, data[i].email],
           display: {
             title: data[i].name,
             description: data[i].email,
