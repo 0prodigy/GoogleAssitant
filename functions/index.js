@@ -93,10 +93,15 @@ app.handle("chooseTemplate", async (conv) => {
   conv.add(
     new List({
       title: "All templates list",
-      subtitle: "available template",
+      subtitle: "available template " + list.length,
       items: [...list.map((item) => ({ key: String(item.name) }))],
     })
   );
+});
+
+const ASSISTANT_LOGO_IMAGE = new Image({
+  url: "https://developers.google.com/assistant/assistant_96.png",
+  alt: "Google Assistant logo",
 });
 
 app.handle("addContact", async (conv) => {
@@ -121,6 +126,7 @@ app.handle("addContact", async (conv) => {
           display: {
             title: data[i].name,
             description: data[i].email,
+            image: ASSISTANT_LOGO_IMAGE,
           },
         });
       }
@@ -151,11 +157,6 @@ app.handle("addContact", async (conv) => {
   );
 });
 
-const ASSISTANT_LOGO_IMAGE = new Image({
-  url: "https://developers.google.com/assistant/assistant_96.png",
-  alt: "Google Assistant logo",
-});
-
 app.handle("listDocument", async (conv) => {
   let list = [];
 
@@ -174,15 +175,20 @@ app.handle("listDocument", async (conv) => {
     .then(({ data }) => {
       data = data.page.inodes;
       for (let i = 0; i < data.length; i++) {
-        list.push({
-          name: String(data[i].object_id),
-          synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
-          display: {
-            title: data[i].name,
-            description: "Description of Item #1",
-            image: ASSISTANT_LOGO_IMAGE,
-          },
-        });
+        if (
+          data[i].document_status !== null &&
+          data[i].document_status.name.toLowerCase() === "completed"
+        ) {
+          list.push({
+            name: String(data[i].id),
+            synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+            display: {
+              title: data[i].name,
+              description: "Description of Item #1",
+              image: ASSISTANT_LOGO_IMAGE,
+            },
+          });
+        }
       }
       return list;
     })
@@ -202,62 +208,59 @@ app.handle("listDocument", async (conv) => {
   ];
 
   // Define prompt content using keys
-  conv.add(
-    new List({
-      title: "All templates list",
-      subtitle: "available template",
-      items: [...list.map((item) => ({ key: String(item.name) }))],
-    })
-  );
+  if (list.length !== 0) {
+    conv.add(
+      new List({
+        title: "All Completed Document",
+        subtitle: "total docs " + list.length,
+        items: [...list.map((item) => ({ key: String(item.name) }))],
+      })
+    );
+  } else {
+    conv.add("You haven't completed any document");
+  }
+});
 
-  // conv.add("Which one from this list.");
-  // let config = {
-  //   method: "get",
-  //   url: "https://api.revvsales.com/api/folders/?page_num=1",
-  //   headers: {
-  //     AccessToken,
-  //     "Content-Type": "application/json",
-  //   },
-  // };
+async function getObjectId(id) {
+  let config = {
+    method: "get",
+    url: "https://api.revvsales.com/api/docs/" + id,
+    headers: {
+      AccessToken,
+      "Content-Type": "application/json",
+    },
+  };
 
-  // await axios(config)
-  //   .then(({ data }) => {
-  //     data = data.page.inodes;
-  //     for (let i = 0; i < data.length; i++) {
-  //       list.push({
-  //         name: String(data[i].object_id),
-  //         synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
-  //         display: {
-  //           title: data[i].name,
-  //           description: data[i].document_tag.name,
-  //         },
-  //       });
-  //     }
-  //     return list;
-  //   })
-  //   .catch((error) => {
-  //     conv.add("Something went wrong");
-  //   });
+  let result = "";
+  await axios(config)
+    .then((res) => res.data.Document)
+    .then((res) => (result = res.object_id))
+    .catch((err) => console.log(err));
 
-  // // Override type based on slot 'prompt_option'
-  // conv.session.typeOverrides = [
-  //   {
-  //     name: "objectId",
-  //     mode: "TYPE_REPLACE",
-  //     synonym: {
-  //       entries: [...list],
-  //     },
-  //   },
-  // ];
+  return result;
+}
 
-  // // Define prompt content using keys
-  // conv.add(
-  //   new List({
-  //     title: "All document List",
-  //     subtitle: "file type",
-  //     items: [...list.map((item) => ({ key: String(item.name) }))],
-  //   })
-  // );
+app.handle("publishDoc", async (conv) => {
+  const id = conv.session.params.documentId;
+  let obj_id = await getObjectId(id);
+  const data = {
+    object_id: obj_id,
+    object_type: "DOC",
+  };
+  let config = {
+    method: "post",
+    url: "https://api.revvsales.com/api/perma-link",
+    headers: {
+      AccessToken,
+      "Content-Type": "application/json",
+    },
+    data: data,
+  };
+
+  await axios(config)
+    .then((res) => res.data)
+    .then((res) => conv.add("great here is your magic link " + res.url))
+    .catch((err) => conv.add("Something went wrong" + err));
 });
 
 exports.ActionsOnGoogleFulfillment = functions.https.onRequest(app);
