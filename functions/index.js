@@ -99,7 +99,7 @@ app.handle("chooseTemplate", async (conv) => {
   );
 });
 
-app.handle("addContact", async (conv) => {
+app.handle("contactList", async (conv) => {
   conv.prompt.add("i need more details");
   let list = [];
 
@@ -116,11 +116,12 @@ app.handle("addContact", async (conv) => {
     .then(({ data: { Contacts: data } }) => {
       for (let i = 0; i < data.length; i++) {
         list.push({
-          name: String(data[i].id),
+          name: String(data[i].email+"#"+data[i].name),
           synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
           display: {
             title: data[i].name,
             description: data[i].email,
+            image: new Image({ url: "https://www.kindpng.com/picc/m/78-786207_user-avatar-png-user-avatar-icon-png-transparent.png", alt: data[i].name }),
           },
         });
       }
