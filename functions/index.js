@@ -100,8 +100,8 @@ app.handle("chooseTemplate", async (conv) => {
 });
 
 const ASSISTANT_LOGO_IMAGE = new Image({
-    url: "https://developers.google.com/assistant/assistant_96.png",
-    alt: "Google Assistant logo",
+  url: "https://developers.google.com/assistant/assistant_96.png",
+  alt: "Google Assistant logo",
 });
 
 app.handle("contactList", async (conv) => {
@@ -110,7 +110,7 @@ app.handle("contactList", async (conv) => {
 
   let config = {
     method: "get",
-    url: "https://api.revvsales.com/api/docstemplate/?page_num=1&status=ACTIVE",
+    url: "https://api.revvsales.com/api/contacts/all?page_num=1",
     headers: {
       AccessToken,
       "Content-Type": "application/json",
@@ -121,8 +121,13 @@ app.handle("contactList", async (conv) => {
     .then(({ data: { Contacts: data } }) => {
       for (let i = 0; i < data.length; i++) {
         list.push({
-          name: String(data[i].email+"#"+data[i].name),
-          synonyms: ["choose " + (i + 1), String(i + 1), data[i].name, data[i].email],
+          name: String(data[i].email + "#" + data[i].name),
+          synonyms: [
+            "choose " + (i + 1),
+            String(i + 1),
+            data[i].name,
+            data[i].email,
+          ],
           display: {
             title: data[i].name,
             description: data[i].email,
