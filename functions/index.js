@@ -151,107 +151,113 @@ app.handle("addContact", async (conv) => {
   );
 });
 
-// app.handle("listDocument", async (conv) => {
-//   let list = [];
+const ASSISTANT_LOGO_IMAGE = new Image({
+  url: "https://developers.google.com/assistant/assistant_96.png",
+  alt: "Google Assistant logo",
+});
 
-//   conv.add("This is a list.");
+app.handle("listDocument", async (conv) => {
+  let list = [];
 
-//   let config = {
-//     method: "get",
-//     url: "https://api.revvsales.com/api/folders/?page_num=1",
-//     headers: {
-//       AccessToken,
-//       "Content-Type": "application/json",
-//     },
-//   };
+  conv.add("Pick one project");
 
-//   await axios(config)
-//     .then(({ data: { Templates: data } }) => {
-//       data = data.page.inodes;
-//       for (let i = 0; i < data.length; i++) {
-//         list.push({
-//           name: String(data[i].object_id),
-//           synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
-//           display: {
-//             title: data[i].name,
-//             description: data[i].document_tag.name,
-//           },
-//         });
-//       }
-//       return list;
-//     })
-//     .catch((error) => {
-//       conv.add("Something went wrong");
-//     });
+  let config = {
+    method: "get",
+    url: "https://api.revvsales.com/api/folders/?page_num=1",
+    headers: {
+      AccessToken,
+      "Content-Type": "application/json",
+    },
+  };
 
-//   // Override type based on slot 'prompt_option'
-//   conv.session.typeOverrides = [
-//     {
-//       name: "objectId",
-//       mode: "TYPE_REPLACE",
-//       synonym: {
-//         entries: [...list],
-//       },
-//     },
-//   ];
+  await axios(config)
+    .then(({ data }) => {
+      data = data.page.inodes;
+      for (let i = 0; i < data.length; i++) {
+        list.push({
+          name: String(data[i].object_id),
+          synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+          display: {
+            title: data[i].name,
+            description: "Description of Item #1",
+            image: ASSISTANT_LOGO_IMAGE,
+          },
+        });
+      }
+      return list;
+    })
+    .catch((error) => {
+      // console.log(error);
+      conv.add("Something went wrong");
+    });
+  // Override type based on slot 'prompt_option'
+  conv.session.typeOverrides = [
+    {
+      name: "objectId",
+      mode: "TYPE_REPLACE",
+      synonym: {
+        entries: [...list],
+      },
+    },
+  ];
 
-//   // Define prompt content using keys
-//   conv.add(
-//     new List({
-//       title: "All templates list",
-//       subtitle: "available template",
-//       items: [...list.map((item) => ({ key: String(item.name) }))],
-//     })
-//   );
+  // Define prompt content using keys
+  conv.add(
+    new List({
+      title: "All templates list",
+      subtitle: "available template",
+      items: [...list.map((item) => ({ key: String(item.name) }))],
+    })
+  );
 
-//   // conv.add("Which one from this list.");
-//   // let config = {
-//   //   method: "get",
-//   //   url: "https://api.revvsales.com/api/folders/?page_num=1",
-//   //   headers: {
-//   //     AccessToken,
-//   //     "Content-Type": "application/json",
-//   //   },
-//   // };
+  // conv.add("Which one from this list.");
+  // let config = {
+  //   method: "get",
+  //   url: "https://api.revvsales.com/api/folders/?page_num=1",
+  //   headers: {
+  //     AccessToken,
+  //     "Content-Type": "application/json",
+  //   },
+  // };
 
-//   // await axios(config)
-//   //   .then(({ data }) => {
-//   //     data = data.page.inodes;
-//   //     for (let i = 0; i < data.length; i++) {
-//   //       list.push({
-//   //         name: String(data[i].object_id),
-//   //         synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
-//   //         display: {
-//   //           title: data[i].name,
-//   //           description: data[i].document_tag.name,
-//   //         },
-//   //       });
-//   //     }
-//   //     return list;
-//   //   })
-//   //   .catch((error) => {
-//   //     conv.add("Something went wrong");
-//   //   });
+  // await axios(config)
+  //   .then(({ data }) => {
+  //     data = data.page.inodes;
+  //     for (let i = 0; i < data.length; i++) {
+  //       list.push({
+  //         name: String(data[i].object_id),
+  //         synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+  //         display: {
+  //           title: data[i].name,
+  //           description: data[i].document_tag.name,
+  //         },
+  //       });
+  //     }
+  //     return list;
+  //   })
+  //   .catch((error) => {
+  //     conv.add("Something went wrong");
+  //   });
 
-//   // // Override type based on slot 'prompt_option'
-//   // conv.session.typeOverrides = [
-//   //   {
-//   //     name: "objectId",
-//   //     mode: "TYPE_REPLACE",
-//   //     synonym: {
-//   //       entries: [...list],
-//   //     },
-//   //   },
-//   // ];
+  // // Override type based on slot 'prompt_option'
+  // conv.session.typeOverrides = [
+  //   {
+  //     name: "objectId",
+  //     mode: "TYPE_REPLACE",
+  //     synonym: {
+  //       entries: [...list],
+  //     },
+  //   },
+  // ];
 
-//   // // Define prompt content using keys
-//   // conv.add(
-//   //   new List({
-//   //     title: "All document List",
-//   //     subtitle: "file type",
-//   //     items: [...list.map((item) => ({ key: String(item.name) }))],
-//   //   })
-//   // );
-// });
+  // // Define prompt content using keys
+  // conv.add(
+  //   new List({
+  //     title: "All document List",
+  //     subtitle: "file type",
+  //     items: [...list.map((item) => ({ key: String(item.name) }))],
+  //   })
+  // );
+});
 
 exports.ActionsOnGoogleFulfillment = functions.https.onRequest(app);
