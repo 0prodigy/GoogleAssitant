@@ -8,8 +8,8 @@
 // //   response.send("Hello from Firebase!");
 // // });
 
-const { conversation, Image, List } = require("@assistant/conversation");
-const { actionssdk } = require("actions-on-google");
+const { conversation, Image, List, Link } = require("@assistant/conversation");
+// const { actionssdk, OpenUrlAction } = require("actions-on-google");
 const axios = require("axios");
 const functions = require("firebase-functions");
 const AccessToken = require("./ACCESS_TOKEN");
@@ -21,10 +21,10 @@ app.handle("first", async (conv) => {
 });
 
 app.handle("createDoc", async (conv) => {
-  let data = JSON.stringify({
-    template_id: conv.session.params.templateNumber,
-    title: conv.session.params.newTitle || "Untitled Document",
-  });
+  let data = {
+    template_id: Number(conv.session.params.templateNumber),
+    title: conv.session.params.newTitle,
+  };
 
   let config = {
     method: "post",
@@ -37,11 +37,9 @@ app.handle("createDoc", async (conv) => {
   };
 
   await axios(config)
-    .then((response) =>
-      conv.add("Hook Created " + conv.session.params.newTitle)
-    )
+    .then((response) => conv.add("Doc Created " + conv.session.params.newTitle))
     .catch((error) => {
-      conv.add(error);
+      conv.add("problem in creating document" + error);
     });
 });
 
@@ -226,6 +224,134 @@ app.handle("listDocument", async (conv) => {
   }
 });
 
+app.handle("completeDocList", async (conv) => {
+  let list = [];
+
+  conv.add("Pick one project");
+
+  let config = {
+    method: "get",
+    url: "https://api.revvsales.com/api/folders/?page_num=1",
+    headers: {
+      AccessToken,
+      "Content-Type": "application/json",
+    },
+  };
+
+  await axios(config)
+    .then(({ data }) => {
+      data = data.page.inodes;
+      for (let i = 0; i < data.length; i++) {
+        if (
+          data[i].document_status !== null &&
+          data[i].document_status.name.toLowerCase() === "completed"
+        ) {
+          list.push({
+            name: String(data[i].id),
+            synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+            display: {
+              title: data[i].name,
+              description: "Description of Item #1",
+              image: ASSISTANT_LOGO_IMAGE,
+            },
+          });
+        }
+      }
+      return list;
+    })
+    .catch((error) => {
+      // console.log(error);
+      conv.add("Something went wrong");
+    });
+  // Override type based on slot 'prompt_option'
+  conv.session.typeOverrides = [
+    {
+      name: "docId",
+      mode: "TYPE_REPLACE",
+      synonym: {
+        entries: [...list],
+      },
+    },
+  ];
+
+  // Define prompt content using keys
+  if (list.length !== 0) {
+    conv.add(
+      new List({
+        title: "All Completed Document",
+        subtitle: "total docs " + list.length,
+        items: [...list.map((item) => ({ key: String(item.name) }))],
+      })
+    );
+  } else {
+    conv.add("You haven't any completed document");
+  }
+});
+
+app.handle("incompletelistDocument", async (conv) => {
+  let list = [];
+
+  conv.add("Pick one project");
+
+  let config = {
+    method: "get",
+    url: "https://api.revvsales.com/api/folders/?page_num=1",
+    headers: {
+      AccessToken,
+      "Content-Type": "application/json",
+    },
+  };
+
+  await axios(config)
+    .then(({ data }) => {
+      data = data.page.inodes;
+      for (let i = 0; i < data.length; i++) {
+        if (
+          data[i].document_status !== null &&
+          data[i].document_status.name.toLowerCase() !== "completed"
+        ) {
+          list.push({
+            name: String(data[i].id),
+            synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+            display: {
+              title: data[i].name,
+              description: "Description of Item #1",
+              image: ASSISTANT_LOGO_IMAGE,
+            },
+          });
+        }
+      }
+      return list;
+    })
+    .catch((error) => {
+      // console.log(error);
+      conv.add("Something went wrong");
+    });
+  // Override type based on slot 'prompt_option'
+  conv.session.typeOverrides = [
+    {
+      name: "docId",
+      mode: "TYPE_REPLACE",
+      synonym: {
+        entries: [...list],
+      },
+    },
+  ];
+
+  // Define prompt content using keys
+  if (list.length !== 0) {
+    conv.add(
+      new List({
+        title: "All Inworking Document",
+        subtitle: "total docs " + list.length,
+        items: [...list.map((item) => ({ key: String(item.name) }))],
+      })
+    );
+  } else {
+    conv.add("You haven't any new incomplted document");
+  }
+});
+
 async function getObjectId(id) {
   let config = {
     method: "get",
@@ -264,8 +390,39 @@ app.handle("publishDoc", async (conv) => {
 
   await axios(config)
     .then((res) => res.data)
-    .then((res) => conv.add("great here is your magic link " + res.url))
+    .then((res) => {
+      conv.add("great here is your magic link ");
+      conv.session.params = {
+        shareLink: res.url,
+      };
+      return (conv.prompt.firstSimple = {
+        speech: "great here is your magic link",
+        text: `great here is your magic link \n ${res.url}`,
+      });
+    })
     .catch((err) => conv.add("Something went wrong" + err));
+});
+
+app.handle("shareOnEmail", (conv) => {
+  conv.add("Shared on email");
+});
+
+function share(link) {
+  let twitterShareurl = `https://twitter.com/intent/tweet?url=${link}`;
+  let fbShareUrl = `http://www.facebook.com/sharer/sharer.php?u=${link}`;
+  return { twitterShareurl, fbShareUrl };
+}
+
+app.handle("shareOnSocialMedia", (conv) => {
+  const { twitterShareurl, fbShareUrl } = share(conv.session.params.shareLink);
+
+  conv.prompt.firstSimple = {
+    speech: "Shareable Link",
+    text: `twitter:
+    ${twitterShareurl}
+    facebook:
+    ${fbShareUrl}`,
+  };
 });
 
 exports.ActionsOnGoogleFulfillment = functions.https.onRequest(app);
