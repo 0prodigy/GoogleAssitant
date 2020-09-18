@@ -169,7 +169,7 @@ app.handle("contactList", async (conv) => {
 app.handle("listDocument", async (conv) => {
   let list = [];
 
-  conv.add("Choose document you want to publish");
+  conv.add("Choose document you want to preview");
 
   let config = {
     method: "get",
@@ -312,20 +312,15 @@ app.handle("incompletelistDocument", async (conv) => {
     .then(({ data }) => {
       data = data.page.inodes;
       for (let i = 0; i < data.length; i++) {
-        if (
-          data[i].document_status !== null &&
-          data[i].document_status.name.toLowerCase() !== "completed"
-        ) {
-          list.push({
-            name: String(data[i].id),
-            synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
-            display: {
-              title: data[i].name,
-              description: "Description of Item #1",
-              image: ASSISTANT_LOGO_IMAGE,
-            },
-          });
-        }
+        list.push({
+          name: String(data[i].id),
+          synonyms: ["choose " + (i + 1), String(i + 1), data[i].name],
+          display: {
+            title: data[i].name,
+            description: "Description of Item #1",
+            image: ASSISTANT_LOGO_IMAGE,
+          },
+        });
       }
       return list;
     })
@@ -400,7 +395,7 @@ app.handle("publishDoc", async (conv) => {
       conv.session.params = {
         shareLink: res.url,
       };
-      return (conv.prompt.lastSimple = {
+      return (conv.prompt.firstSimple = {
         speech: "great here is your magic link",
         text: `great here is your magic link \n ${res.url}`,
       });
