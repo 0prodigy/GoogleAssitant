@@ -102,6 +102,12 @@ const ASSISTANT_LOGO_IMAGE = new Image({
   alt: "Google Assistant logo",
 });
 
+const AVATAR_LOGO_IMAGE = new Image({
+  url:
+    "https://image.freepik.com/free-vector/mafia-man-character-with-glasses-ans-cigar_23-2148473395.jpg",
+  alt: "avatar",
+});
+
 app.handle("contactList", async (conv) => {
   conv.prompt.add("Your unbeatable team");
   let list = [];
@@ -129,7 +135,7 @@ app.handle("contactList", async (conv) => {
           display: {
             title: data[i].name,
             description: data[i].email,
-            image: ASSISTANT_LOGO_IMAGE,
+            image: AVATAR_LOGO_IMAGE,
           },
         });
       }
@@ -163,7 +169,7 @@ app.handle("contactList", async (conv) => {
 app.handle("listDocument", async (conv) => {
   let list = [];
 
-  conv.add("Choose one document");
+  conv.add("Choose document you want to publish");
 
   let config = {
     method: "get",
@@ -391,11 +397,10 @@ app.handle("publishDoc", async (conv) => {
   await axios(config)
     .then((res) => res.data)
     .then((res) => {
-      conv.add("great here is your magic link ");
       conv.session.params = {
         shareLink: res.url,
       };
-      return (conv.prompt.firstSimple = {
+      return (conv.prompt.lastSimple = {
         speech: "great here is your magic link",
         text: `great here is your magic link \n ${res.url}`,
       });
