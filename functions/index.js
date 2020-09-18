@@ -17,7 +17,7 @@ const AccessToken = require("./ACCESS_TOKEN");
 const app = conversation();
 
 app.handle("first", async (conv) => {
-  conv.add("What i can do for you?");
+  conv.add("At your services.");
 });
 
 app.handle("createDoc", async (conv) => {
@@ -46,7 +46,7 @@ app.handle("createDoc", async (conv) => {
 app.handle("chooseTemplate", async (conv) => {
   let list = [];
 
-  conv.add("This is a list.");
+  conv.add("Beautiful templates for your brand new idea");
 
   let config = {
     method: "get",
@@ -103,7 +103,7 @@ const ASSISTANT_LOGO_IMAGE = new Image({
 });
 
 app.handle("contactList", async (conv) => {
-  conv.prompt.add("i need more details");
+  conv.prompt.add("Your unbeatable team");
   let list = [];
 
   let config = {
@@ -163,7 +163,7 @@ app.handle("contactList", async (conv) => {
 app.handle("listDocument", async (conv) => {
   let list = [];
 
-  conv.add("Pick one project");
+  conv.add("Choose one document");
 
   let config = {
     method: "get",
@@ -227,7 +227,7 @@ app.handle("listDocument", async (conv) => {
 app.handle("completeDocList", async (conv) => {
   let list = [];
 
-  conv.add("Pick one project");
+  conv.add("All completed documents");
 
   let config = {
     method: "get",
@@ -291,7 +291,7 @@ app.handle("completeDocList", async (conv) => {
 app.handle("incompletelistDocument", async (conv) => {
   let list = [];
 
-  conv.add("Pick one project");
+  conv.add("All incomplete documents");
 
   let config = {
     method: "get",
@@ -404,7 +404,7 @@ app.handle("publishDoc", async (conv) => {
 });
 
 app.handle("shareOnEmail", (conv) => {
-  conv.add("Shared on email");
+  conv.add("Shared on email with your comrades");
 });
 
 function share(link) {
